@@ -1,0 +1,5 @@
+com\qingcheng\dao\AdminMapper.class
+com\qingcheng\dao\AdminRoleMapper.class
+com\qingcheng\service\impl\AdminServiceImpl.class
+com\qingcheng\service\impl\MenuServiceImpl.class
+com\qingcheng\dao\MenuMapper.class

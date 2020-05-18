@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>模板管理</title>
+    <!--  rel="stylesheet"  引入外部样式表  -->
+    <link rel="stylesheet" href="../css/elementui.css">
+</head>
+<body>
+<div id="app">
+
+    <!--    <div class="content-header">-->
+    <!--        <h1>管理<small>模板管理</small></h1>-->
+    <!--        <el-breadcrumb separator-class="el-icon-arrow-right" class="breadcrumb">-->
+    <!--            <el-breadcrumb-item :to="{path: '/'}">首页</el-breadcrumb-item>-->
+    <!--            <el-breadcrumb-item>管理</el-breadcrumb-item>-->
+    <!--            <el-breadcrumb-item>模板管理</el-breadcrumb-item>-->
+    <!--        </el-breadcrumb>-->
+    <!--    </div>-->
+
+    <!--    使用表单  -->
+    <el-form inline="true">
+        <el-form-item label="模板名称">
+            <el-input placeholder="品牌名称" v-model="searchMap.name"></el-input>
+        </el-form-item>
+
+
+        <el-form-item>
+            <el-button type="primary" @click="onSubmit">查询</el-button>
+        </el-form-item>
+
+        <!--    pojo = {} 直接点击 新增 把其内的数据清空    -->
+        <el-form-item>
+            <el-button type="primary" @click=" pojo = {} , formVisible = true">新增</el-button>
+        </el-form-item>
+
+    </el-form>
+
+    <!--   使用表格展示数据 -->
+    <el-table
+            :data="tableData"
+            style="width: 100%">
+        <el-table-column
+                prop="id"
+                label="ID"
+                width="180">
+        </el-table-column>
+
+        <el-table-column
+                prop="name"
+                label="模板名称"
+                width="180">
+        </el-table-column>
+
+        <el-table-column
+                prop="specNum"
+                label="规格数量"
+                width="180">
+        </el-table-column>
+
+        <el-table-column
+                prop="paraNum"
+                label="参数数量"
+                width="180">
+        </el-table-column>
+
+        <el-table-column
+                label="设置"
+                width="250">
+            <template slot-scope="scope">
+                <el-button @click="goSpec(scope.row.id)" size="mini" type="primary" size="small">规格列表</el-button>
+                <el-button @click="goPara(scope.row.id)" size="mini" type="primary" size="small">参数列表</el-button>
+            </template>
+        </el-table-column>
+
+
+        <el-table-column
+                label="操作"
+                width="180">
+            <template slot-scope="scope">
+                <el-button type="text" @click="edit(scope.row.id)" size="small">修改</el-button>
+                <el-button type="text" @click="dele(scope.row.id)" size="small">删除</el-button>
+            </template>
+        </el-table-column>
+
+    </el-table>
+
+    <!--   @size-change="handleSizeChange" 事件
+            .sync 表示当点击页面时 currentPage被更改  这里为分页 -->
+    <el-pagination
+            @size-change="fetchDate"
+            @current-change="fetchDate"
+            :current-page.sync="currentPage"
+            :page-sizes="[10, 20, 30, 40]"
+            :page-size="size"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="total">
+    </el-pagination>
+
+    <!-- 点击打开的 新增对话框-->
+    <el-dialog
+            title="模板编辑"
+            :visible.sync="formVisible">
+
+        <el-form label-width="100px">
+            <el-form-item label="模板名称">
+                <el-input placeholder="模板名称" v-model="pojo.name"></el-input>
+            </el-form-item>
+
+
+            <el-form-item>
+                <el-button @click="save()">保 存</el-button>
+                <el-button @click="formVisible = false">关 闭</el-button>
+            </el-form-item>
+
+
+        </el-form>
+
+
+    </el-dialog>
+
+
+</div>
+
+<script src="../js/vue.js"></script>
+<script src="../js/axios.js"></script>
+<script src="../js/elementui.js"></script>
+
+<script>
+
+    new Vue({
+        el: "#app",
+        //定义在页面上的一些数据属性
+        data() {
+            return {
+                //列表数据
+                tableData: [],
+                //开始页码
+                currentPage: 1,
+                //每页大小
+                size: 10,
+                //总记录数
+                total: 10,
+                //定义查询变量
+                searchMap: {},
+                //默认为false 点击后新增窗口打开
+                formVisible: false,
+                //新增功能 绑定变量
+                pojo: {},
+                imageUrl: {}
+
+            }
+        },
+
+        // 钩子函数 在页面打开自动触发调用的
+        created() {
+            // this.fetchDate()
+            this.onSubmit()
+        },
+
+        //事件的方法
+        methods: {
+
+            //与后端交互，实现分页数据动态化
+            fetchDate() {
+                axios.get('/template/findPage.do?page=' + this.currentPage + '&size=' + this.size).then(response => {
+                    this.tableData = response.data.rows;
+                    this.total = response.data.total
+                })
+
+            },
+            // 实现条件分页查询
+            onSubmit() {
+                axios.post('/template/findPage.do?page=' + this.currentPage + '&size=' + this.size, this.searchMap).then(response => {
+                    this.tableData = response.data.rows;
+                    this.total = response.data.total
+                })
+            },
+            // 实现新增/修改 方法 三元判断是新增还是修改 路径 `` 反单引号ES6新特性 用来拼接字符串
+            save() {
+                //保存到数据库时 把上传地址绑定
+                this.pojo.image = this.imageUrl;
+                axios.post(`/template/${this.pojo.id == null ? 'add' : 'update'}.do`, this.pojo).then(response => {
+                    //回调后刷新数据 关闭窗口
+                    this.formVisible = false;
+                    this.onSubmit();
+                })
+            },
+
+            // 修改方法 这里只是根据主键读取数据 返回
+            edit(id) {
+                //打开窗口  读取数据 当点击保存时还是调用save方法？ 三元运算符判断
+                this.formVisible = true;
+                axios.get('/template/findById.do?id=' + id).then(response => {
+                    //查询到后 修改pojo 变量
+                    this.pojo = response.data
+                })
+            },
+
+            // 删除方法
+            dele(id) {
+
+                this.$confirm('确定要删除吗？', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+
+                    axios.get('/template/delete.do?id=' + id).then(response => {
+                        //刷新 和 this.onSubmit(); 差不多
+
+                        this.$alert('删除成功', '提示')
+                        this.fetchDate();
+                    })
+                });
+            },
+
+            goSpec(id) {
+                location.href = `spec.html?id=` + id
+            },
+            goPara(id) {
+                location.href = `para.html?id=` + id
+            }
+
+        }
+
+
+    })
+
+
+</script>
+
+</body>
+</html>

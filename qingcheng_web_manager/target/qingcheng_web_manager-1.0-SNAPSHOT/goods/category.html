@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>category管理</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="../plugins/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+
+
+</head>
+<body class="hold-transition">
+<div id="app">
+
+    <div class="app-container">
+        <div class="box">
+            <div class="filter-container">
+                <!--       新增按钮 点击显示隐藏框  同时初始化父级ID     -->
+                <el-button type="primary" class="butT" @click="formVisible=true; pojo={parentId: searchMap.parentId }">
+                    新增
+                </el-button>
+                <el-button type="primary" class="butT" @click="returnQuery()">返回上级</el-button>
+            </div>
+
+            <!--    表格展示数据        -->
+            <el-table :data="tableData" border style="width: 100%">
+                <el-table-column prop="id" label="分类ID" width="80"></el-table-column>
+                <el-table-column prop="name" label="分类名称" width="200"></el-table-column>
+                <el-table-column prop="goodsNum" label="商品数量" width="80"></el-table-column>
+
+                <el-table-column label="级别" width="80">
+                    <template slot-scope="scope">
+                        <!--     根据 parentIds 算出级别    -->
+                        {{parentIds.length+1}}
+                    </template>
+                </el-table-column>
+
+                <!--     el switch开关控件 开启为1 关闭为0        -->
+                <el-table-column label="是否显示" width="80">
+                    <template slot-scope="scope">
+                        <el-switch
+                                v-model="scope.row.isShow"
+                                active-color="#13ce66"
+                                inactive-color="#ff4949"
+                                active-value="1"
+                                inactive-value="0">
+                        </el-switch>
+                    </template>
+
+                </el-table-column>
+                <el-table-column label="是否导航" width="80">
+                    <template slot-scope="scope">
+                        <el-switch
+                                v-model="scope.row.isMenu"
+                                active-color="#13ce66"
+                                inactive-color="#ff4949"
+                                active-value="1"
+                                inactive-value="0">
+                        </el-switch>
+                    </template>
+                </el-table-column>
+                <!--       模板 el Select选择器 显示        -->
+                <el-table-column prop="seq" label="排序" width="80"></el-table-column>
+                <el-table-column label="模板" width="200">
+                    <!--  disabled 不可选择与修改       -->
+                    <template slot-scope="scope">
+                        <el-select v-model="scope.row.templateId" disabled placeholder="请选择">
+                            <el-option
+                                    v-for="item in templateList"
+                                    :key="item.id"
+                                    :label="item.name"
+                                    :value="item.id">
+                            </el-option>
+                        </el-select>
+                    </template>
+                </el-table-column>
+
+                <el-table-column
+                        label="设置">
+                    <template slot-scope="scope">
+                        <!--          查看下级 传入上级ID      v-if="parentIds.length<2" 如果条件符合 不显示此按键     -->
+                        <el-button v-if="parentIds.length<2" @click="queryByParentId(scope.row.id)" size="mini"
+                                   type="primary" size="small">查看下级
+                        </el-button>
+
+                    </template>
+                </el-table-column>
+
+                <el-table-column
+                        label="操作">
+                    <template slot-scope="scope">
+                        <el-button @click="edit(scope.row.id)" size="mini" type="primary" size="small">修改</el-button>
+                        <el-button @click="dele(scope.row.id)" size="mini" type="danger" size="small">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+
+            <div class="add-form">
+                <!--弹出窗口-->
+                <el-dialog title="编辑" :visible.sync="formVisible">
+                    <el-form label-width="80px">
+                        <el-form-item label="分类名称">
+                            <el-input v-model="pojo.name"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="是否显示">
+                            <el-switch
+                                    v-model="pojo.isShow"
+                                    active-color="#13ce66"
+                                    inactive-color="#ff4949"
+                                    active-value="1"
+                                    inactive-value="0">
+                            </el-switch>
+                        </el-form-item>
+                        <el-form-item label="是否导航">
+                            <el-switch
+                                    v-model="pojo.isMenu"
+                                    active-color="#13ce66"
+                                    inactive-color="#ff4949"
+                                    active-value="1"
+                                    inactive-value="0">
+                            </el-switch>
+                        </el-form-item>
+                        <el-form-item label="排序">
+                            <el-input v-model="pojo.seq"></el-input>
+                        </el-form-item>
+                        <!--   模板选择  下拉列表 v-model="pojo.templateId" 绑定值 -->
+                        <el-form-item label="模板ID">
+                            <el-select v-model="pojo.templateId" filterable placeholder="请选择">
+                                <!--  选项部分 v-for 循环 templateList    label 显示的值  value 提交的值 -->
+                                <el-option
+                                        v-for="item in templateList"
+                                        :key="item.id"
+                                        :label="item.name"
+                                        :value="item.id">
+                                </el-option>
+                            </el-select>
+
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="save()">保存</el-button>
+                            <el-button @click="formVisible = false">关闭</el-button>
+                        </el-form-item>
+                    </el-form>
+                </el-dialog>
+            </div>
+
+        </div>
+    </div>
+
+
+</div>
+</body>
+<!--引入内部资源-->
+<script src="/js/vue.js"></script>
+<script src="/js/axios.js"></script>
+<script src="/js/elementui.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                tableData: [],
+                //初始 parentId 设置为0 只显示1级分类
+                searchMap: {parentId: 0},
+                pojo: {},
+                formVisible: false,
+                imageUrl: '',
+                //用来标记上级id 用来做返回功能
+                parentIds: [],
+                templateList: []
+            }
+        },
+        created() {
+            this.fetchData();
+            //加载模板列表
+            axios.get(`/template/findAll.do`).then(response => {
+                this.templateList = response.data
+            })
+        },
+        methods: {
+            fetchData() {
+                axios.post(`/category/findList.do`, this.searchMap).then(response => {
+                    this.tableData = response.data
+                });
+            },
+            save() {
+                axios.post(`/category/${this.pojo.id == null ? 'add' : 'update'}.do`, this.pojo).then(response => {
+                    this.fetchData(); //刷新列表
+                    this.formVisible = false;//关闭窗口
+                });
+            },
+            edit(id) {
+                this.formVisible = true // 打开窗口
+                // 调用查询
+                axios.get(`/category/findById.do?id=${id}`).then(response => {
+                    this.pojo = response.data;
+                    // this.imageUrl=this.pojo.image //显示图片  如页面有图片上传功能放开注释
+                })
+            },
+            dele(id) {
+                this.$confirm('确定要删除此记录吗?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    axios.get(`/category/delete.do?id=${id}`).then(response => {
+                        if (response.data.code == 0) {
+                            this.fetchData(); //刷新列表
+                        } else {
+                            this.$alert(response.data.message)
+                        }
+
+                    })
+                })
+            },
+            //查询 传入参数的下级分类
+            queryByParentId(parentId) {
+                //做记号 向数组中添加一个值（上级id）
+                this.parentIds.push(this.searchMap.parentId)
+                //传入 参数上级id
+                this.searchMap.parentId = parentId
+                // 根据参数进行查询 刷新
+                this.fetchData()
+            },
+            // 回退方法
+            returnQuery() {
+                //如果等于零、0就是在最上一级 没必要在回退
+                if (this.parentIds.length > 0) {
+                    // 回退
+                    this.searchMap.parentId = this.parentIds[this.parentIds.length - 1]
+                    this.parentIds.splice(this.parentIds.length - 1, 1) //删除数组最后一个元素
+                    this.fetchData()
+                }
+            }
+
+        }
+    })
+</script>
+</html>

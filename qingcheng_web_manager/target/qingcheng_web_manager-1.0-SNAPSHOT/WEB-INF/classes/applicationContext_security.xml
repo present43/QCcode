@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+						http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
+
+
+    <!--  放行资源  -->
+    <http pattern="/login.html" security="none"></http>
+    <http pattern="/login_error.html" security="none"></http>
+    <http pattern="/css/**" security="none"></http>
+    <http pattern="/img/**" security="none"></http>
+    <http pattern="/js/**" security="none"></http>
+    <http pattern="/assets/**" security="none"></http>
+    <http pattern="/data/**" security="none"></http>
+    <http pattern="/files/**" security="none"></http>
+    <http pattern="/favicon.ico" security="none"></http>
+    <http pattern="/spu/save.do" security="none"></http>
+
+
+    <!--       页面的拦截规则         -->
+    <!--       attern="/**"  webapp 目录下 拦截所有    access="hasRole()" 访问需要的角色权限      -->
+    <http>
+        <intercept-url pattern="/**" access="hasRole('brand')"></intercept-url>
+        <!--       当前的工程实现表单登录   注意要写绝对路径     -->
+        <form-login login-page="/login.html" default-target-url="/main.html"
+                    authentication-failure-url="/login.html"/>
+        <!--     退出登录   -->
+        <logout/>
+        <!--    防止403 关闭csrf的验证  （跨站请求伪造）   -->
+        <csrf disabled="true"></csrf>
+
+        <!-- 同源策略      -->
+        <headers>
+            <frame-options policy="SAMEORIGIN"></frame-options>
+        </headers>
+    </http>
+
+
+    <!--       认证管理器         -->
+    <authentication-manager>
+        <!--    认证提供者用来配置用户名和密码    -->
+        <!--    user-service-ref   用户服务  通过下面注入     -->
+        <authentication-provider user-service-ref="userDetailService">
+            <!--      注入 加密方式      -->
+            <password-encoder ref="bcryptEncoder"></password-encoder>
+        </authentication-provider>
+    </authentication-manager>
+
+    <!-- 配置一个Bean  在上面注入 (加密方式)   -->
+    <beans:bean id="bcryptEncoder"
+                class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"></beans:bean>
+
+    <!-- 配置一个Bean  在上面注入 (用户服务)   -->
+    <beans:bean id="userDetailService" class="com.qingcheng.controller.UserDetailServiceImpl"></beans:bean>
+</beans:beans>
